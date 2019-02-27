@@ -1056,6 +1056,9 @@ void uwsgi_close_request(struct wsgi_request *wsgi_req) {
 	int waitpid_status;
 	int tmp_id;
 	uint64_t tmp_rt, rss = 0, vsz = 0;
+#ifdef __linux__
+    uint64_t uss = 0;
+#endif
 
 	// apply transformations
 	if (wsgi_req->transformations) {
@@ -1084,12 +1087,29 @@ void uwsgi_close_request(struct wsgi_request *wsgi_req) {
 		uwsgi.workers[uwsgi.mywid].avg_response_time = (uwsgi.workers[uwsgi.mywid].avg_response_time + tmp_rt) / 2;
 	}
 
-	// get memory usage
-	if (uwsgi.logging_options.memory_report == 1 || uwsgi.force_get_memusage) {
-		get_memusage(&rss, &vsz);
+
+#ifdef __linux__
+	if (uwsgi.logging_options.memory_report == 2 || uwsgi.reload_on_uss) {
+		get_memusage_extra(&vsz, &rss, &uss);
 		uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
-		uwsgi.workers[uwsgi.mywid].rss_size = rss;
+        uwsgi.workers[uwsgi.mywid].rss_size = rss;
+		uwsgi.workers[uwsgi.mywid].uss_size = uss;
 	}
+    else if(uwsgi.logging_options.memory_report || uwsgi.force_get_memusage) {
+        get_memusage(&rss, &vsz);
+        uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
+        uwsgi.workers[uwsgi.mywid].rss_size = rss;
+    }
+#else
+    if (uwsgi.logging_options.memory_report || uwsgi.force_get_memusage) {
+        get_memusage(&rss, &vsz);
+        uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
+        uwsgi.workers[uwsgi.mywid].rss_size = rss;
+    }
+#endif
+
+
+
 
 	if (!wsgi_req->do_not_account) {
 		uwsgi.workers[0].requests++;
@@ -1210,6 +1230,12 @@ void uwsgi_close_request(struct wsgi_request *wsgi_req) {
 	if (uwsgi.reload_on_rss && (rlim_t) rss >= uwsgi.reload_on_rss && (end_of_request - (uwsgi.workers[uwsgi.mywid].last_spawn * 1000000) >= uwsgi.min_worker_lifetime * 1000000)) {
 		goodbye_cruel_world();
 	}
+
+#ifdef __linux__
+    if (uwsgi.reload_on_uss && (rlim_t) uss >= uwsgi.reload_on_uss && (end_of_request - (uwsgi.workers[uwsgi.mywid].last_spawn * 1000000) >= uwsgi.min_worker_lifetime * 1000000)) {
+		goodbye_cruel_world();
+	}
+#endif
 
 
 	// after the first request, if i am a vassal, signal Emperor about my loyalty

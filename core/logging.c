@@ -706,9 +706,17 @@ void uwsgi_logit_simple(struct wsgi_request *wsgi_req) {
 		logvecpos++;
 	}
 
-	if (uwsgi.logging_options.memory_report == 1) {
-		rlen = snprintf(mempkt, 4096, "{address space usage: %lld bytes/%lluMB} {rss usage: %llu bytes/%lluMB} ", (unsigned long long) uwsgi.workers[uwsgi.mywid].vsz_size, (unsigned long long) uwsgi.workers[uwsgi.mywid].vsz_size / 1024 / 1024,
-			(unsigned long long) uwsgi.workers[uwsgi.mywid].rss_size, (unsigned long long) uwsgi.workers[uwsgi.mywid].rss_size / 1024 / 1024);
+	if (uwsgi.logging_options.memory_report) {
+		rlen = snprintf(mempkt, 4096, "{address space usage: %lld bytes/%lluMB} {rss usage: %llu bytes/%lluMB} ",
+						(unsigned long long) uwsgi.workers[uwsgi.mywid].vsz_size,
+						(unsigned long long) uwsgi.workers[uwsgi.mywid].vsz_size / 1024 / 1024,
+						(unsigned long long) uwsgi.workers[uwsgi.mywid].rss_size,
+						(unsigned long long) uwsgi.workers[uwsgi.mywid].rss_size / 1024 / 1024);
+		if (uwsgi.logging_options.memory_report == 2) {
+			rlen += snprintf(mempkt + rlen, 4096 - rlen, "{uss usage: %llu bytes/%lluMB} ",
+							(unsigned long long) uwsgi.workers[uwsgi.mywid].uss_size,
+							(unsigned long long) uwsgi.workers[uwsgi.mywid].uss_size / 1024 / 1024);
+		}
 		logvec[logvecpos].iov_base = mempkt;
 		logvec[logvecpos].iov_len = rlen;
 		logvecpos++;
@@ -853,6 +861,30 @@ void get_memusage(uint64_t * rss, uint64_t * vsz) {
 #endif
 
 }
+
+#ifdef __linux__
+void get_memusage_extra(uint64_t * vsz, uint64_t * rss, uint64_t * uss) {
+	FILE *procfile;
+	int i;
+	uint64_t * size = 0;
+	uint64_t * resident = 0;
+	uint64_t * shared = 0;
+
+	procfile = fopen("/proc/self/statm", "r");
+	if (procfile) {
+		i = fscanf(procfile, "%llu %llu %llu %*s %*s %*s %*s",
+					(unsigned long long *) size, (unsigned long long *) resident, (unsigned long long *) shared);
+		if (i != 3) {
+			uwsgi_log("warning: invalid record in /proc/self/statm\n");
+		}
+		fclose(procfile);
+	}
+	*vsz = *size * uwsgi.page_size;
+	*rss = *resident * uwsgi.page_size;
+	*uss = (*resident - *shared) * uwsgi.page_size;
+
+}
+#endif
 
 void uwsgi_register_logger(char *name, ssize_t(*func) (struct uwsgi_logger *, char *, size_t)) {
 
