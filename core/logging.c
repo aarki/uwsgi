@@ -866,22 +866,21 @@ void get_memusage(uint64_t * rss, uint64_t * vsz) {
 void get_memusage_extra(uint64_t * vsz, uint64_t * rss, uint64_t * uss) {
 	FILE *procfile;
 	int i;
-	uint64_t * size = 0;
-	uint64_t * resident = 0;
-	uint64_t * shared = 0;
+	uint64_t size = 0;
+	uint64_t resident = 0;
+	uint64_t shared = 0;
 
 	procfile = fopen("/proc/self/statm", "r");
 	if (procfile) {
-		i = fscanf(procfile, "%llu %llu %llu %*s %*s %*s %*s",
-					(unsigned long long *) size, (unsigned long long *) resident, (unsigned long long *) shared);
+		i = fscanf(procfile, "%lu %lu %lu", &size, &resident, &shared);
 		if (i != 3) {
 			uwsgi_log("warning: invalid record in /proc/self/statm\n");
 		}
 		fclose(procfile);
 	}
-	*vsz = *size * uwsgi.page_size;
-	*rss = *resident * uwsgi.page_size;
-	*uss = (*resident - *shared) * uwsgi.page_size;
+	*vsz = size * uwsgi.page_size;
+	*rss = resident * uwsgi.page_size;
+	*uss = (resident - shared) * uwsgi.page_size;
 
 }
 #endif
