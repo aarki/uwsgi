@@ -1057,7 +1057,7 @@ void uwsgi_close_request(struct wsgi_request *wsgi_req) {
 	int tmp_id;
 	uint64_t tmp_rt, rss = 0, vsz = 0;
 #ifdef __linux__
-    uint64_t uss = 0;
+	uint64_t uss = 0;
 #endif
 
 	// apply transformations
@@ -1096,15 +1096,15 @@ void uwsgi_close_request(struct wsgi_request *wsgi_req) {
 		uwsgi.workers[uwsgi.mywid].uss_size = uss;
 	}
     else if(uwsgi.logging_options.memory_report || uwsgi.force_get_memusage) {
-        get_memusage(&rss, &vsz);
-        uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
-        uwsgi.workers[uwsgi.mywid].rss_size = rss;
+		get_memusage(&rss, &vsz);
+		uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
+		uwsgi.workers[uwsgi.mywid].rss_size = rss;
     }
 #else
     if (uwsgi.logging_options.memory_report || uwsgi.force_get_memusage) {
-        get_memusage(&rss, &vsz);
-        uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
-        uwsgi.workers[uwsgi.mywid].rss_size = rss;
+		get_memusage(&rss, &vsz);
+		uwsgi.workers[uwsgi.mywid].vsz_size = vsz;
+		uwsgi.workers[uwsgi.mywid].rss_size = rss;
     }
 #endif
 
@@ -1232,7 +1232,7 @@ void uwsgi_close_request(struct wsgi_request *wsgi_req) {
 	}
 
 #ifdef __linux__
-    if (uwsgi.reload_on_uss && (rlim_t) uss >= uwsgi.reload_on_uss && (end_of_request - (uwsgi.workers[uwsgi.mywid].last_spawn * 1000000) >= uwsgi.min_worker_lifetime * 1000000)) {
+	if (uwsgi.reload_on_uss && (rlim_t) uss >= uwsgi.reload_on_uss && (end_of_request - (uwsgi.workers[uwsgi.mywid].last_spawn * 1000000) >= uwsgi.min_worker_lifetime * 1000000)) {
 		goodbye_cruel_world();
 	}
 #endif

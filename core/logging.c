@@ -714,8 +714,8 @@ void uwsgi_logit_simple(struct wsgi_request *wsgi_req) {
 						(unsigned long long) uwsgi.workers[uwsgi.mywid].rss_size / 1024 / 1024);
 		if (uwsgi.logging_options.memory_report == 2) {
 			rlen += snprintf(mempkt + rlen, 4096 - rlen, "{uss usage: %llu bytes/%lluMB} ",
-							(unsigned long long) uwsgi.workers[uwsgi.mywid].uss_size,
-							(unsigned long long) uwsgi.workers[uwsgi.mywid].uss_size / 1024 / 1024);
+						(unsigned long long) uwsgi.workers[uwsgi.mywid].uss_size,
+						(unsigned long long) uwsgi.workers[uwsgi.mywid].uss_size / 1024 / 1024);
 		}
 		logvec[logvecpos].iov_base = mempkt;
 		logvec[logvecpos].iov_len = rlen;
