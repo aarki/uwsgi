@@ -244,6 +244,7 @@ static int carbon_push_stats(int retry_cycle, time_t now) {
 
 		unsigned long long total_rss = 0;
 		unsigned long long total_vsz = 0;
+		unsigned long long total_respawns = 0;
 		unsigned long long total_tx = 0;
 		unsigned long long total_avg_rt = 0; // total avg_rt
 		unsigned long long avg_rt = 0; // per worker avg_rt reported to carbon
@@ -261,6 +262,7 @@ static int carbon_push_stats(int retry_cycle, time_t now) {
 		for(i=1;i<=uwsgi.numproc;i++) {
 			total_tx += uwsgi.workers[i].tx;
 			total_harakiri += uwsgi.workers[i].harakiri_count;
+			total_respawns += uwsgi.workers[i].respawn_count;
 
 			if (uwsgi.workers[i].cheaped) {
 				// also if worker is cheaped than we report its average response time as zero, sending last value might be confusing
@@ -376,6 +378,9 @@ static int carbon_push_stats(int retry_cycle, time_t now) {
 		}
 
 		wok = carbon_write(fd, "%s%s.%s.harakiri %llu %llu\n", u_carbon.root_node, u_carbon.hostname, u_carbon.id, (unsigned long long) total_harakiri, (unsigned long long) now);
+		if (!wok) goto clear;
+
+		wok = carbon_write(fd, "%s%s.%s.respawns %llu %llu\n", u_carbon.root_node, u_carbon.hostname, u_carbon.id, (unsigned long long) total_respawns, (unsigned long long) now);
 		if (!wok) goto clear;
 
 metrics_loop:
