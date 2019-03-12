@@ -328,6 +328,8 @@ static int carbon_push_stats(int retry_cycle, time_t now) {
 			wok = carbon_write(fd, "%s%s.%s.worker%d.harakiri %llu %llu\n", u_carbon.root_node, u_carbon.hostname, u_carbon.id, i, (unsigned long long) uwsgi.workers[i].harakiri_count, (unsigned long long) now);
 			if (!wok) goto clear;
 
+            wok = carbon_write(fd, "%s%s.%s.worker%d.respawns %llu %llu\n", u_carbon.root_node, u_carbon.hostname, u_carbon.id, i, (unsigned long long) uwsgi.workers[i].respawn_count, (unsigned long long) now);
+            if (!wok) goto clear;
 		}
 
 		if (uwsgi.logging_options.memory_report || uwsgi.force_get_memusage) {
